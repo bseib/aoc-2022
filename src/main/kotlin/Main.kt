@@ -15,8 +15,8 @@ object Problem1 {
     fun run() {
         val data1 = getRawData1().split("\n")
         val elfList1 = toElfList(data1).sortedBy { it.totalCalories }
-        println(elfList1.last().totalCalories)
-
+        println("top 1 elf calories: ${elfList1.last().totalCalories}")
+        println("top 3 elf calories: ${elfList1.takeLast(3).sumOf { it.totalCalories }}")
     }
 
     private fun toElfList(data: List<String>): List<Elf> {
