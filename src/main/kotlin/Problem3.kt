@@ -24,7 +24,7 @@ class Problem3 : DailyProblem {
 
         fun findCommonItem(): Item {
             val common = compartment1 intersect compartment2
-            require(common.size == 1) {
+            if (common.size != 1) {
                 throw Exception("expecting only one item in common")
             }
             return common.first()
@@ -34,7 +34,7 @@ class Problem3 : DailyProblem {
     class KnapsackGroup(val kn1: Knapsack, val kn2: Knapsack, val kn3: Knapsack) {
         fun findCommonItem(): Item {
             val common = kn1.allContents intersect kn2.allContents intersect kn3.allContents
-            require(common.size == 1) {
+            if (common.size != 1) {
                 throw Exception("expecting only one item in common")
             }
             return common.first()
