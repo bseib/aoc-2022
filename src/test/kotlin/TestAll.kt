@@ -24,7 +24,7 @@ class TestAll {
     fun day03() {
         Problem3().apply {
             assertEquals(157, solvePart0())
-            assertEquals(0, solvePart1())
+            assertEquals(7848, solvePart1())
             assertEquals(0, solvePart2())
         }
     }
