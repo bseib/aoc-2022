@@ -1,8 +1,4 @@
-fun main() {
-    Problem1.run()
-}
-
-object Problem1 {
+class Problem1 : DailyProblem {
 
     class Elf(calorieList: List<Int>) {
         val totalCalories: Int
@@ -12,11 +8,20 @@ object Problem1 {
         }
     }
 
-    fun run() {
-        val data1 = getRawData1().split("\n")
-        val elfList1 = toElfList(data1).sortedBy { it.totalCalories }
-        println("top 1 elf calories: ${elfList1.last().totalCalories}")
-        println("top 3 elf calories: ${elfList1.takeLast(3).sumOf { it.totalCalories }}")
+    private val elfList: List<Elf>
+
+    init {
+        elfList = toElfList(data1).sortedBy { it.totalCalories }
+    }
+
+    override fun solvePart1(): Int {
+        return elfList.last().totalCalories
+//            .also { println("top 1 elf calories: $it") }
+    }
+
+    override fun solvePart2(): Int {
+        return elfList.takeLast(3).sumOf { it.totalCalories }
+//            .also { println("top 3 elf calories: $it") }
     }
 
     private fun toElfList(data: List<String>): List<Elf> {
@@ -25,16 +30,14 @@ object Problem1 {
             if (s == "") index else null
         }.filterNotNull() + listOf(trimmed.size)
         return indexList.zipWithNext()
-//            .also { println("after zip: ${it}") }
             .filterNot { it.first == it.second }
             .map { trimmed.subList(if (it.first == 0) 0 else it.first + 1, it.second) }
-//            .also { println("after sublist: ${it}") }
             .map { it.map { it.toInt() } }
             .map { Elf(it) }
     }
 
-
-    fun getRawData1() = """
+    companion object {
+        val data1 = """
         4920
 3254
 4147
@@ -2282,5 +2285,7 @@ object Problem1 {
 2858
 2490
 4443
-    """.trimIndent()
+    """.toLines()
+    }
+
 }

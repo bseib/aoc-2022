@@ -1,26 +1,14 @@
-fun main() {
-    Problem2.run()
-}
-
-object Problem2 {
+class Problem2 : DailyProblem {
 
     class Weapon(moniker: String) {
-        val name: String
-        val value: Int
-        val flipValue  // translate a values of { 1, 2, 3 } => { 3, 2, 1 }
-            get() = 1 + ((value * 2) % 3)
-
-        init {
-            // Oh Kotlin, why you no assign directly to member variables with destructuring? 😢
-            val (name, value) = when (moniker) {
-                "A" -> Pair<String, Int>("Rock", 1)
-                "B" -> Pair<String, Int>("Paper", 2)
-                "C" -> Pair<String, Int>("Scissors", 3)
-                else -> throw Exception("invalid moniker")
-            }
-            this.name = name
-            this.value = value
+        private val value: Int = when (moniker) {
+            "A" -> 1 // Rock
+            "B" -> 2 // Paper
+            "C" -> 3 // Scissors
+            else -> throw Exception("invalid moniker")
         }
+        private val flipValue  // translate values of { 1, 2, 3 } => { 3, 2, 1 }
+            get() = 1 + ((value * 2) % 3)
 
         //        X=1  Y=2  Z=3  <== me
         //  A=3 |  3    6    0
@@ -59,28 +47,38 @@ object Problem2 {
         )
     }
 
-    fun run() {
-        val battle0 = toWeaponPairList(data0(), naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
-        println("battle0 = ${battle0}")
-        val battle1 = toWeaponPairList(data1(), naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
-        println("battle1 = ${battle1}")
-        val battle2 = toWeaponPairList(data1(), realWeaponPicker).map { it.second.battle(it.first) }.sum()
-        println("battle2 = ${battle2}")
+    fun solvePart0(): Int {
+        return toWeaponPairList(data0, naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
+            .also { println("battle0 = $it") }
     }
 
-    private fun toWeaponPairList(data: List<String>, pick: (xyz: String, abc: String) -> Weapon): List<Pair<Weapon, Weapon>> {
+    override fun solvePart1(): Int {
+        return toWeaponPairList(data1, naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
+            .also { println("battle1 = $it") }
+    }
+
+    override fun solvePart2(): Int {
+        return toWeaponPairList(data1, realWeaponPicker).map { it.second.battle(it.first) }.sum()
+            .also { println("battle2 = $it") }
+    }
+
+    private fun toWeaponPairList(
+        data: List<String>,
+        pick: (xyz: String, abc: String) -> Weapon,
+    ): List<Pair<Weapon, Weapon>> {
         return data.map { it.trim() }
             .map { it.split(" ") }
             .map { Pair(Weapon(it[0]), pick(it[1], it[0])) } // them, us
     }
 
-    fun data0() = """
+    companion object {
+        val data0 = """
         A Y
         B X
         C Z
     """.toLines()
 
-    fun data1() = """
+        val data1 = """
         C Z
         A Y
         C Z
@@ -2582,5 +2580,6 @@ object Problem2 {
         A X
         A Z
     """.toLines()
+    }
 
 }
