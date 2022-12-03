@@ -11,10 +11,12 @@ class Problem3 : DailyProblem {
     }
 
     class Knapsack(contents: String) {
+        val allContents: Set<Item>
         val compartment1: Set<Item>
         val compartment2: Set<Item>
 
         init {
+            allContents = contents.toSet().map { Item(it) }.toSet()
             val halfSize = contents.length / 2
             compartment1 = contents.take(halfSize).toSet().map { Item(it) }.toSet()
             compartment2 = contents.takeLast(halfSize).toSet().map { Item(it) }.toSet()
@@ -29,6 +31,15 @@ class Problem3 : DailyProblem {
         }
     }
 
+    class KnapsackGroup(val kn1: Knapsack, val kn2: Knapsack, val kn3: Knapsack) {
+        fun findCommonItem(): Item {
+            val common = kn1.allContents intersect kn2.allContents intersect kn3.allContents
+            require(common.size == 1) {
+                throw Exception("expecting only one item in common")
+            }
+            return common.first()
+        }
+    }
 
     fun solvePart0(): Int {
         return data0.sumOf { Knapsack(it).findCommonItem().priority }
@@ -39,7 +50,9 @@ class Problem3 : DailyProblem {
     }
 
     override fun solvePart2(): Int {
-        return 0
+        return data1.chunked(3)
+            .map { KnapsackGroup(Knapsack(it[0]), Knapsack(it[1]), Knapsack(it[2])) }
+            .sumOf { it.findCommonItem().priority }
     }
 
     companion object {
