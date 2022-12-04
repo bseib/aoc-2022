@@ -18,7 +18,10 @@ class Problem4 : DailyProblem {
     }
 
     override fun solvePart2(): Int {
-        return 0
+        return toRangePairList(data1).fold(0) { acc, pair ->
+            val (a, b) = pair
+            acc + if ((a intersect b).size > 0) 1 else 0
+        }
     }
 
     fun toRangePairList(lines: List<String>): List<Pair<IntRange, IntRange>> = lines.map { toRangePair(it) }

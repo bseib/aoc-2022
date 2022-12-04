@@ -34,7 +34,7 @@ class TestAll {
         Problem4().apply {
             assertEquals(2, solvePart0())
             assertEquals(582, solvePart1())
-            assertEquals(0, solvePart2())
+            assertEquals(893, solvePart2())
         }
     }
 
