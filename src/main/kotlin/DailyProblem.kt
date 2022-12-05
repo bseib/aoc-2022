@@ -1,4 +1,4 @@
-interface DailyProblem {
-    fun solvePart1(): Int
-    fun solvePart2(): Int
+interface DailyProblem<T> {
+    fun solvePart1(): T
+    fun solvePart2(): T
 }

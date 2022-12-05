@@ -1,4 +1,4 @@
-class Problem2 : DailyProblem {
+class Problem2 : DailyProblem<Int> {
 
     class Weapon(moniker: String) {
         private val value: Int = when (moniker) {

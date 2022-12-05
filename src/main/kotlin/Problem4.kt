@@ -1,6 +1,6 @@
 import java.lang.Integer.min
 
-class Problem4 : DailyProblem {
+class Problem4 : DailyProblem<Int> {
 
 
     fun solvePart0(): Int {

@@ -1,4 +1,4 @@
-class Problem1 : DailyProblem {
+class Problem1 : DailyProblem<Int> {
 
     class Elf(calorieList: List<Int>) {
         val totalCalories: Int

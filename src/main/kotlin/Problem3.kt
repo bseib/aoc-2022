@@ -1,4 +1,4 @@
-class Problem3 : DailyProblem {
+class Problem3 : DailyProblem<Int> {
 
     @JvmInline
     value class Item(val name: Char) {
