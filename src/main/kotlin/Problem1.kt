@@ -2285,7 +2285,7 @@ class Problem1 : DailyProblem<Int> {
 2858
 2490
 4443
-    """.toLines()
+    """.toTrimmedLines()
     }
 
 }

@@ -48,7 +48,7 @@ class Problem4 : DailyProblem<Int> {
             2-8,3-7
             6-6,4-6
             2-6,4-8
-        """.toLines()
+        """.toTrimmedLines()
 
         val data1 = """
             67-84,66-87
@@ -1051,7 +1051,7 @@ class Problem4 : DailyProblem<Int> {
             16-46,15-16
             41-60,94-94
             28-60,3-29
-        """.trimIndent().toLines()
+        """.trimIndent().toTrimmedLines()
     }
 
 }

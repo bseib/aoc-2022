@@ -41,7 +41,7 @@ class TestAll {
     @Test
     fun day05() {
         Problem5().apply {
-            assertEquals("", solvePart0())
+            assertEquals("CMZ", solvePart0())
             assertEquals("", solvePart1())
             assertEquals("", solvePart2())
         }

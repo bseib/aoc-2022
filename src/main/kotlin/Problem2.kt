@@ -76,7 +76,7 @@ class Problem2 : DailyProblem<Int> {
         A Y
         B X
         C Z
-    """.toLines()
+    """.toTrimmedLines()
 
         val data1 = """
         C Z
@@ -2579,7 +2579,7 @@ class Problem2 : DailyProblem<Int> {
         C X
         A X
         A Z
-    """.toLines()
+    """.toTrimmedLines()
     }
 
 }

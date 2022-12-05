@@ -63,7 +63,7 @@ class Problem3 : DailyProblem<Int> {
             wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
             ttgJtRGJQctTZtZT
             CrZsJsPPZsGzwwsLwLmpwMDw
-        """.toLines()
+        """.toTrimmedLines()
 
         val data1 = """
             dtddvvhwttHJhwdhJPddhwJGppmGjgpQgTjQplQpTljwpg
@@ -366,7 +366,7 @@ class Problem3 : DailyProblem<Int> {
             dBTtFLTtVmpdLhMprSRSWMRSMR
             QvJvQbjbCgCQRBhzzRsNWNBC
             bjgGqQGbQnjGQgnQgbGgjJnDLHLdfPVtdDmLZdBFVVZttdTf
-        """.trimIndent().toLines()
+        """.trimIndent().toTrimmedLines()
     }
 
 }
