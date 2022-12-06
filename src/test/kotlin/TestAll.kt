@@ -47,4 +47,16 @@ class TestAll {
         }
     }
 
+    @Test
+    fun day06() {
+        Problem6().apply {
+            assertEquals(5, solvePart0a())
+            assertEquals(6, solvePart0b())
+            assertEquals(10, solvePart0c())
+            assertEquals(11, solvePart0d())
+            assertEquals(1093, solvePart1())
+            assertEquals(3534, solvePart2())
+        }
+    }
+
 }
