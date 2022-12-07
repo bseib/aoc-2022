@@ -1,13 +1,6 @@
 class Problem7 : DailyProblem<Int> {
 
-    sealed class Node() {
-        fun prettyPrint(indent: String = ""): String {
-            return when (this) {
-                is DirNode -> "${indent}- $name (dir)\n" + contents.joinToString("") { it.prettyPrint("$indent  ") }
-                is FileNode -> "${indent}- $name (file, size=${size})\n"
-            }
-        }
-    }
+    sealed class Node
     data class FileNode(val name: String, val size: Int) : Node()
     data class DirNode(val name: String, val contents: MutableList<Node>) : Node() {
         fun addNode(node: Node) = contents.add(node)
@@ -17,6 +10,7 @@ class Problem7 : DailyProblem<Int> {
                 is FileNode -> node.size
             }
         }
+
         fun allDirs(): List<DirNode> = contents.filterIsInstance<DirNode>().flatMap { listOf(it) + it.allDirs() }
         fun getDirAtRelativePath(path: List<String>): DirNode {
             return if (path.isEmpty()) this
@@ -25,6 +19,7 @@ class Problem7 : DailyProblem<Int> {
                 ?: throw Error("No such directory path: /${path.joinToString("/")}")
         }
     }
+
     fun makeRootNode() = DirNode("/", mutableListOf<Node>())
 
     fun solvePart0(): Int {
@@ -38,7 +33,16 @@ class Problem7 : DailyProblem<Int> {
     }
 
     override fun solvePart2(): Int {
-        return 0
+        val totalSpace = 70000000
+        val installSpaceNeeded = 30000000
+        val root = parseCommandsIntoFilesystem(makeRootNode(), data1)
+        val balanceOfSpaceNeeded = installSpaceNeeded - (totalSpace - root.size())
+        if (balanceOfSpaceNeeded <= 0) throw Error("No additional space is needed")
+        return root.allDirs()
+            .map { it.size() }
+            .sorted()
+            .find { it >= balanceOfSpaceNeeded }
+            ?: throw Error("No directory found with size >= $balanceOfSpaceNeeded")
     }
 
     fun parseCommandsIntoFilesystem(root: DirNode, data0: List<String>): DirNode {
@@ -48,9 +52,6 @@ class Problem7 : DailyProblem<Int> {
                 if (it.startsWith("$ cd")) {
                     updateCWD(cwd, it)
                 }
-//                else if (it.startsWith("$ ls")) {
-//                    /* don't need to be stateful, yet anyway */
-//                }
             }
             else {
                 val currentDir = root.getDirAtRelativePath(cwd)
