@@ -68,4 +68,13 @@ class TestAll {
         }
     }
 
+    @Test
+    fun day08() {
+        Problem8().apply {
+            assertEquals(21, solvePart0())
+            assertEquals(1820, solvePart1())
+            assertEquals(385112, solvePart2())
+        }
+    }
+
 }
