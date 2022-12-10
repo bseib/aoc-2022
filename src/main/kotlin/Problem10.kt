@@ -1,22 +1,74 @@
-class Problem10 : DailyProblem<Int> {
+class Problem10 : DailyProblemPair<Int, String> {
 
-    sealed class Command(val cycles: Int)
-    class Noop : Command(1)
-    data class AddX(val amount: Int) : Command(2)
+    sealed class Command(val addValue: Int)
+    class OpNoop : Command(0) {
+        override fun toString() = "noop"
+    }
+    class OpAddX1(amount: Int) : Command(0) {
+        val name = "addx $amount"
+        override fun toString() = name
+    }
+    class OpAddX2(amount: Int) : Command(amount) {
+        val name = "addx $amount"
+        override fun toString() = name
+    }
 
-    fun measureSignalStrength(commands: List<Command>, measurementPoints: List<Int>): Int {
-        var regX: Int = 1
-        val timeline = listOf(Noop()) + commands.flatMap {
-            when (it) {
-                is Noop -> listOf(it)
-                is AddX -> listOf(Noop(), it)
+
+    data class Sprite(var regX: Int, val width: Int) {
+        fun intersects(x: Int) = (regX - 1 .. regX + 1).contains(x % width)
+        override fun toString(): String {
+            val max = width
+            val max1 = max - 1
+            val max2 = max - 2
+            return "Sprite position: " + when (regX) {
+                -1 -> "#" + ".".repeat(max1)
+                0 -> "##" + ".".repeat(max2)
+                in (1 .. (max2)) -> ".".repeat(regX - 1) + "###" + ".".repeat(max2 - regX)
+                max1 -> ".".repeat(max2) + "##"
+                max -> ".".repeat(max1) + "#"
+                else -> ".".repeat(max)
             }
         }
+    }
+
+    class Raster(val width: Int, var line: String = "") {
+        fun addChar(c: Char) { line += c }
+        fun row1() = line.take(width)
+        override fun toString(): String {
+            return line.chunked(width).joinToString("\n")
+        }
+    }
+
+    class CPU {
+        val rasterWidth = 40
+        val sprite = Sprite(1, rasterWidth)
+        val raster = Raster(rasterWidth)
+
+        fun cycleMsg(msg: String, cycleName: String) = msg + cycleName.padStart(15 - msg.length, ' ') + ": "
+        fun executeCycle(cycle: Int, cmd: Command) {
+//            val cycleName = (cycle + 1).toString()
+//            if (cmd is OpAddX1)
+//                println(cycleMsg("Start cycle", cycleName) + "begin executing " + cmd)
+//            println(cycleMsg("During cycle", cycleName) + "CRT draws pixel in position ${cycle}")
+            val pixel = if (sprite.intersects(cycle)) '#' else '.'
+            raster.addChar(pixel)
+//            println("Current CRT row: ${raster.row1()}")
+            sprite.regX += cmd.addValue
+//            if (cmd is OpAddX2) {
+//                println(cycleMsg("End of cycle", cycleName) + "finish executing " + cmd + " (Register X is now ${sprite.regX})")
+//                println(sprite)
+//            }
+//            println()
+        }
+        fun execute(ops: List<Command>) = ops.forEachIndexed { cycle, cmd ->  executeCycle(cycle, cmd) }
+    }
+
+    fun measureSignalStrength(cmds: List<Command>, measurementPoints: List<Int>): Int {
+        var regX: Int = 1
+        val ops = listOf(OpNoop()) + cmds
         return measurementPoints.zipWithNext().sumOf { cycleRange ->
-            regX += timeline.subList(cycleRange.first, cycleRange.second)
-                .also { println(it) }
-                .filterIsInstance<AddX>()
-                .sumOf { addX -> addX.amount }
+            regX += ops.subList(cycleRange.first, cycleRange.second)
+                .sumOf { it.addValue }
             regX * cycleRange.second
         }
     }
@@ -31,16 +83,25 @@ class Problem10 : DailyProblem<Int> {
         return measureSignalStrength(toCommands(data1), measurePoints)
     }
 
-    override fun solvePart2(): Int {
-        return 0
+    fun solvePart0a(): String {
+        val cpu = CPU().apply { execute(toCommands(data0)) }
+        return cpu.raster.toString()
+    }
+
+    override fun solvePart2(): String {
+        val cpu = CPU().apply { execute(toCommands(data1)) }
+        return cpu.raster.toString()
     }
 
     fun toCommands(data: List<String>): List<Command> {
-        return data.map {
+        return data.flatMap {
             val cmd = it.substring(0, 4)
             when (cmd) {
-                "addx" -> AddX(it.substring(5).toInt())
-                "noop" -> Noop()
+                "noop" -> listOf(OpNoop())
+                "addx" -> {
+                    val amount = it.substring(5).toInt()
+                    listOf(OpAddX1(amount), OpAddX2(amount))
+                }
                 else -> throw Error("unknown command $cmd")
             }
         }
