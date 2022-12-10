@@ -7,16 +7,40 @@ class Problem9 : DailyProblem<Int> {
     data class Position(val x: Int, val y: Int)
 
     data class State(
-        val head: Position,
-        val tail: Position,
+        val knots: List<Position>,
         val tailVisits: Set<Position>,
     ) {
+        val head: Position
+            get() = knots[0]
+
+        override fun toString(): String {
+            val xMin = knots.minOf { it.x }.coerceAtMost(tailVisits.minOf { it.x })
+            val xMax = knots.maxOf { it.x }.coerceAtLeast(tailVisits.maxOf { it.x })
+            val yMin = knots.minOf { it.y }.coerceAtMost(tailVisits.minOf { it.y })
+            val yMax = knots.maxOf { it.y }.coerceAtLeast(tailVisits.maxOf { it.y })
+            return (yMin..yMax).map { y ->
+                (xMin..xMax).map { x ->
+                    val p = Position(x, y)
+                    if (knots[0] == (p)) {
+                        if (tailVisits.contains(p)) "h" else "H"
+                    }
+                    else if (knots.contains(p)) {
+                        if (tailVisits.contains(p)) "t" else "T"
+                    }
+                    else {
+                        if (tailVisits.contains(p)) "#" else "."
+                    }
+                }.joinToString("")
+            }.joinToString("\n", "", "\n")
+        }
+
         companion object {
             fun moveHead(state: State, direction: Char, distance: Int): State {
                 var curState = state
-                repeat(distance) { curState = moveHeadOne(curState, direction)}
+                repeat(distance) { curState = moveHeadOne(curState, direction) }
                 return curState
             }
+
             fun moveHeadOne(state: State, direction: Char): State {
                 val newHead = when (direction) {
                     'U' -> Position(state.head.x, state.head.y - 1)
@@ -25,30 +49,68 @@ class Problem9 : DailyProblem<Int> {
                     'R' -> Position(state.head.x + 1, state.head.y)
                     else -> throw Error("unknown direction '$direction'")
                 }
-                val newTail = if (tailMustMove(newHead, state.tail)) state.head else state.tail
-                return State(newHead, newTail, state.tailVisits + newTail)
+                val pulledTail = pullTail(newHead, state.knots.subList(1))
+                return State(listOf(newHead) + pulledTail, state.tailVisits + pulledTail.last())
             }
-            fun tailMustMove(a: Position, b: Position) = abs(a.x - b.x) > 1 || abs(a.y - b.y) > 1
+
+            fun pullTail(newHead: Position, tail: List<Position>): List<Position> {
+                val newTailHead = maybeMove(newHead, tail[0])
+                return listOf(newTailHead) + if (tail.size > 1) {
+                    pullTail(newTailHead, tail.subList(1))
+                }
+                else {
+                    listOf()
+                }
+            }
+
+            val P = { x: Int, y: Int -> Position(x, y) }
+            fun maybeMove(toward: Position, from: Position): Position {
+                val delta = Position(toward.x - from.x, toward.y - from.y).also {
+                    if (abs(it.x) > 2 || abs(it.y) > 2) throw Error("Unexpected delta: $it")
+                }
+                return when (delta) {
+                    P(-1, -2), P(-2, -1), P(-2, -2) -> Position(from.x - 1, from.y - 1)
+                    P(+1, -2), P(+2, -1), P(+2, -2) -> Position(from.x + 1, from.y - 1)
+                    P(-1, +2), P(-2, +1), P(-2, +2) -> Position(from.x - 1, from.y + 1)
+                    P(+1, +2), P(+2, +1), P(+2, +2) -> Position(from.x + 1, from.y + 1)
+                    P(+0, -2) -> Position(from.x, from.y - 1)
+                    P(+0, +2) -> Position(from.x, from.y + 1)
+                    P(-2, +0) -> Position(from.x - 1, from.y)
+                    P(+2, +0) -> Position(from.x + 1, from.y)
+                    else -> from
+                }
+            }
         }
     }
 
     val origin = Position(0, 0)
-    val initialState = State(origin, origin, setOf(origin))
 
     fun solvePart0(): Int {
+        val initialState = State(List(2) { origin }, setOf(origin))
         return parseInstructions(data0).fold(initialState) { acc, i ->
             State.moveHead(acc, i.direction, i.distance)
         }.tailVisits.size
     }
 
     override fun solvePart1(): Int {
+        val initialState = State(List(2) { origin }, setOf(origin))
         return parseInstructions(data1).fold(initialState) { acc, i ->
             State.moveHead(acc, i.direction, i.distance)
         }.tailVisits.size
     }
 
+    fun solvePart0a(): Int {
+        val initialState = State(List(10) { origin }, setOf(origin))
+        return parseInstructions(data0a).fold(initialState) { acc, i ->
+            State.moveHead(acc, i.direction, i.distance)
+        }.tailVisits.size
+    }
+
     override fun solvePart2(): Int {
-        return 0
+        val initialState = State(List(10) { origin }, setOf(origin))
+        return parseInstructions(data1).fold(initialState) { acc, i ->
+            State.moveHead(acc, i.direction, i.distance)
+        }.tailVisits.size
     }
 
     fun parseInstructions(data: List<String>) = data.map {
@@ -65,6 +127,17 @@ class Problem9 : DailyProblem<Int> {
             D 1
             L 5
             R 2
+        """.toLines()
+
+        val data0a = """
+            R 5
+            U 8
+            L 8
+            D 3
+            R 17
+            D 10
+            L 25
+            U 20
         """.toLines()
 
         val data1 = """
