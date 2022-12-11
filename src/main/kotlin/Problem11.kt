@@ -8,9 +8,9 @@ class Problem11 : DailyProblem<Int> {
         val falseDestination: Int,
     ) {
         var inspectionCount = 0
-        fun inspectAndToss(monkeys: List<Monkey>) {
+        fun inspectAndToss(monkeys: List<Monkey>, worryFunction: (Int) -> Int) {
             items.forEach {
-                val newItem = operation(it)
+                val newItem = worryFunction(operation(it))
                 val recipient = when (newItem % modTest) {
                     0 -> trueDestination
                     else -> falseDestination
@@ -22,12 +22,12 @@ class Problem11 : DailyProblem<Int> {
         }
     }
 
-    fun doInspections(monkeys: List<Monkey>, rounds: Int) {
+    fun doInspections(monkeys: List<Monkey>, rounds: Int, worryFunction: (Int) -> Int) {
         repeat(rounds) {
-            monkeys.forEach { it.inspectAndToss(monkeys) }
-//            println("After round ${1 + it}")
-//            println(monkeyItemsToString(monkeys))
-//            println()
+            monkeys.forEach { it.inspectAndToss(monkeys, worryFunction) }
+            println("After round ${1 + it}")
+            println(monkeyItemsToString(monkeys))
+            println()
         }
     }
 
@@ -43,13 +43,13 @@ class Problem11 : DailyProblem<Int> {
 
     fun solvePart0(): Int {
         val monkeys = toMonkeyList(data0)
-        doInspections(monkeys, 20)
+        doInspections(monkeys, 20, thirdFloor)
         return computeMonkeyBusiness(monkeys)
     }
 
     override fun solvePart1(): Int {
         val monkeys = toMonkeyList(data1)
-        doInspections(monkeys, 20)
+        doInspections(monkeys, 20, thirdFloor)
         return computeMonkeyBusiness(monkeys)
     }
 
@@ -57,10 +57,14 @@ class Problem11 : DailyProblem<Int> {
         return 0
     }
 
+    // worry functions
     private val thirdFloor = { value: Int -> value / 3 }
-    private fun makeOpAdd(operand: Int) = { old: Int -> thirdFloor(old + operand) }
-    private fun makeOpMultiply(operand: Int) = { old: Int -> thirdFloor(old * operand) }
-    private val makeOpSquare = { old: Int -> thirdFloor(old * old) }
+    private val unbridled = { value: Int -> value }
+
+    // operations
+    private fun makeOpAdd(operand: Int) = { old: Int -> old + operand }
+    private fun makeOpMultiply(operand: Int) = { old: Int -> old * operand }
+    private val makeOpSquare = { old: Int -> old * old }
 
     fun toMonkeyList(data: List<String>): List<Monkey> {
         return data.chunked(7).map { chunk ->
