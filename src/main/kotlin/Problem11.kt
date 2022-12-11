@@ -1,18 +1,50 @@
-class Problem11 : DailyProblem<Int> {
+class Problem11 : DailyProblem<Long> {
+
+    sealed class OpNumber {
+        val cache = mutableMapOf<Long, Long>()
+        fun cache(mod: Long, lambda: () -> Long) = cache.computeIfAbsent(mod) { lambda() }
+        abstract fun evaluateModulo(mod: Long): Long
+        abstract fun evaluate(): Long
+    }
+
+    class OpLongNumber(val n: Long) : OpNumber() {
+        override fun evaluateModulo(mod: Long) = cache(mod) { n % mod }
+        override fun evaluate() = n
+    }
+
+    class OpThirdFloorNumber(val n: OpNumber) : OpNumber() {
+        override fun evaluateModulo(mod: Long) = cache(mod) { n.evaluate() / 3 }
+        override fun evaluate() = n.evaluate() / 3
+    }
+
+    class OpAddNumber(val n: OpNumber, val operand: Long) : OpNumber() {
+        override fun evaluateModulo(mod: Long) = cache(mod) { (n.evaluateModulo(mod) + operand) % mod }
+        override fun evaluate() = n.evaluate() + operand
+    }
+
+    class OpMultNumber(val n: OpNumber, val operand: Long) : OpNumber() {
+        override fun evaluateModulo(mod: Long) = cache(mod) { (n.evaluateModulo(mod) * operand) % mod  }
+        override fun evaluate() = n.evaluate() * operand
+    }
+
+    class OpSquareNumber(val n: OpNumber) : OpNumber() {
+        override fun evaluateModulo(mod: Long) = cache(mod) { (n.evaluateModulo(mod) * n.evaluateModulo(mod)) % mod }
+        override fun evaluate() = n.evaluate() * n.evaluate()
+    }
 
     class Monkey(
-        val items: MutableList<Int>,
-        val operation: (old: Int) -> Int,
-        val modTest: Int,
+        val items: MutableList<OpNumber>,
+        val operation: (old: OpNumber) -> OpNumber,
+        val modTest: Long,
         val trueDestination: Int,
         val falseDestination: Int,
     ) {
-        var inspectionCount = 0
-        fun inspectAndToss(monkeys: List<Monkey>, worryFunction: (Int) -> Int) {
+        var inspectionCount = 0L
+        fun inspectAndToss(monkeys: List<Monkey>, worryFunction: (OpNumber) -> OpNumber) {
             items.forEach {
                 val newItem = worryFunction(operation(it))
-                val recipient = when (newItem % modTest) {
-                    0 -> trueDestination
+                val recipient = when (newItem.evaluateModulo(modTest) % modTest) {
+                    0L -> trueDestination
                     else -> falseDestination
                 }
                 monkeys[recipient].items.add(newItem)
@@ -22,16 +54,20 @@ class Problem11 : DailyProblem<Int> {
         }
     }
 
-    fun doInspections(monkeys: List<Monkey>, rounds: Int, worryFunction: (Int) -> Int) {
+    fun doInspections(monkeys: List<Monkey>, rounds: Int, worryFunction: (OpNumber) -> OpNumber) {
         repeat(rounds) {
             monkeys.forEach { it.inspectAndToss(monkeys, worryFunction) }
-            println("After round ${1 + it}")
-            println(monkeyItemsToString(monkeys))
-            println()
+            if ((it + 1) % 1000 == 0 || it == 19) {
+//            if (true) {
+                println("After round ${1 + it}")
+//                println(monkeyItemsToString(monkeys))
+                println(monkeyInspectionsToString(monkeys))
+                println()
+            }
         }
     }
 
-    fun computeMonkeyBusiness(monkeys: List<Monkey>): Int {
+    fun computeMonkeyBusiness(monkeys: List<Monkey>): Long {
         return monkeys.sortedBy { it.inspectionCount }.takeLast(2).map { it.inspectionCount }.product()
     }
 
@@ -41,50 +77,62 @@ class Problem11 : DailyProblem<Int> {
         }.joinToString("\n")
     }
 
-    fun solvePart0(): Int {
+    fun monkeyInspectionsToString(monkeys: List<Monkey>): String {
+        return monkeys.mapIndexed { index, monkey ->
+            "Monkey $index inspected items ${monkey.inspectionCount} times."
+        }.joinToString("\n")
+    }
+
+    fun solvePart0(): Long {
         val monkeys = toMonkeyList(data0)
         doInspections(monkeys, 20, thirdFloor)
         return computeMonkeyBusiness(monkeys)
     }
 
-    override fun solvePart1(): Int {
+    override fun solvePart1(): Long {
         val monkeys = toMonkeyList(data1)
         doInspections(monkeys, 20, thirdFloor)
         return computeMonkeyBusiness(monkeys)
     }
 
-    override fun solvePart2(): Int {
+    fun solvePart0a(): Long {
+        val monkeys = toMonkeyList(data0)
+        doInspections(monkeys, 10000, unbridled)
+        return computeMonkeyBusiness(monkeys)
+    }
+
+    override fun solvePart2(): Long {
         return 0
     }
 
     // worry functions
-    private val thirdFloor = { value: Int -> value / 3 }
-    private val unbridled = { value: Int -> value }
+    private val thirdFloor = { n: OpNumber -> OpThirdFloorNumber(n) }
+    private val unbridled = { n: OpNumber -> n }
 
     // operations
-    private fun makeOpAdd(operand: Int) = { old: Int -> old + operand }
-    private fun makeOpMultiply(operand: Int) = { old: Int -> old * operand }
-    private val makeOpSquare = { old: Int -> old * old }
+    private fun makeOpAdd(operand: Long) = { old: OpNumber -> OpAddNumber(old, operand) }
+    private fun makeOpMultiply(operand: Long) = { old: OpNumber -> OpMultNumber(old, operand) }
+    private fun makeOpSquare() = { old: OpNumber -> OpSquareNumber(old) }
 
     fun toMonkeyList(data: List<String>): List<Monkey> {
         return data.chunked(7).map { chunk ->
             val stanza = chunk.map { it.trim() }
-            val items = stanza[1].substring("Starting items: ".length).split(", ").map { it.toInt() }
+            val items = stanza[1].substring("Starting items: ".length).split(", ").map { OpLongNumber(it.toLong()) }
+            val mod = stanza[3].substring("Test: divisible by ".length).toLong()
             val opString = stanza[2].substring("Operation: new = old ".length)
             val operation = if (opString == "* old") {
-                makeOpSquare
+                makeOpSquare()
             }
             else if (opString.startsWith("*")) {
-                makeOpMultiply(opString.substring(2).toInt())
+                makeOpMultiply(opString.substring(2).toLong())
             }
             else if (opString.startsWith("+")) {
-                makeOpAdd(opString.substring(2).toInt())
+                makeOpAdd(opString.substring(2).toLong())
             }
             else throw Error("Unknown ${stanza[2]}")
-            val modTest = stanza[3].substring("Test: divisible by ".length).toInt()
             val trueDestination = stanza[4].substring("If true: throw to monkey ".length).toInt()
             val falseDestination = stanza[5].substring("If false: throw to monkey ".length).toInt()
-            Monkey(items.toMutableList(), operation, modTest, trueDestination, falseDestination)
+            Monkey(items.toMutableList(), operation, mod, trueDestination, falseDestination)
         }
     }
 
