@@ -57,13 +57,12 @@ class Problem11 : DailyProblem<Long> {
     fun doInspections(monkeys: List<Monkey>, rounds: Int, worryFunction: (OpNumber) -> OpNumber) {
         repeat(rounds) {
             monkeys.forEach { it.inspectAndToss(monkeys, worryFunction) }
-            if ((it + 1) % 1000 == 0 || it == 19) {
-//            if (true) {
-                println("After round ${1 + it}")
-//                println(monkeyItemsToString(monkeys))
-                println(monkeyInspectionsToString(monkeys))
-                println()
-            }
+//            if ((it + 1) % 1000 == 0 || it == 19) {
+//                println("After round ${1 + it}")
+////                println(monkeyItemsToString(monkeys))
+//                println(monkeyInspectionsToString(monkeys))
+//                println()
+//            }
         }
     }
 
@@ -102,7 +101,9 @@ class Problem11 : DailyProblem<Long> {
     }
 
     override fun solvePart2(): Long {
-        return 0
+        val monkeys = toMonkeyList(data1)
+        doInspections(monkeys, 10000, unbridled)
+        return computeMonkeyBusiness(monkeys)
     }
 
     // worry functions

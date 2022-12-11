@@ -119,6 +119,7 @@ class TestAll {
             assertEquals(10605, solvePart0())
             assertEquals(50830, solvePart1())
             assertEquals(2713310158, solvePart0a())
+            assertEquals(14399640002, solvePart2())
         }
     }
 
