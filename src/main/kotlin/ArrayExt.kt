@@ -1,0 +1,1 @@
+fun Array<CharArray>.copy() = map { it.clone() }.toTypedArray()
