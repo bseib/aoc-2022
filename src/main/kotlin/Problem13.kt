@@ -23,11 +23,11 @@ class Problem13 : DailyProblem<Int> {
         }
     }
 
-    class PacketList(val elements: List<Packet>) : Packet() {
+    data class PacketList(val elements: List<Packet>) : Packet() {
         override fun toString() = elements.joinToString(",", "[", "]")
     }
 
-    class PacketInt(val value: Int) : Packet() {
+    data class PacketInt(val value: Int) : Packet() {
         override fun toString() = value.toString()
     }
 
@@ -45,8 +45,22 @@ class Problem13 : DailyProblem<Int> {
         }.sum()
     }
 
+    fun solvePart0a(): Int {
+        val div1 = parsePacketList("[[2]]").first
+        val div2 = parsePacketList("[[6]]").first
+        val packets = (toPacketPairs(data0).flatMap { listOf(it.first, it.second) } + listOf(div1, div2)).sorted()
+        val index1 = 1 + packets.indexOfFirst { it == div1 }
+        val index2 = 1 + packets.indexOfFirst { it == div2 }
+        return index1 * index2
+    }
+
     override fun solvePart2(): Int {
-        return 0
+        val div1 = parsePacketList("[[2]]").first
+        val div2 = parsePacketList("[[6]]").first
+        val packets = (toPacketPairs(data1).flatMap { listOf(it.first, it.second) } + listOf(div1, div2)).sorted()
+        val index1 = 1 + packets.indexOfFirst { it == div1 }
+        val index2 = 1 + packets.indexOfFirst { it == div2 }
+        return index1 * index2
     }
 
     fun toPacketPairs(data: List<String>): List<Pair<Packet, Packet>> {
