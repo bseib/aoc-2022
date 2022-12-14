@@ -128,7 +128,7 @@ class TestAll {
         Problem12().apply {
             assertEquals(31, solvePart0())
             assertEquals(449, solvePart1())
-            assertEquals(0, solvePart2())
+            assertEquals(443, solvePart2())
         }
     }
 

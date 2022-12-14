@@ -5,8 +5,9 @@ class Problem12 : DailyProblem<Int> {
         val endNode: HillNode,
         val grid: List<List<HillNode>>,
     ) {
-        fun findShortestPath(): Int {
-            return endNode.shortestPathToStartNode() ?: throw Error("no route found")
+        val defaultTerminator = { node: HillNode -> node.isStartNode }
+        fun findShortestPath(terminator: (node: HillNode) -> Boolean = defaultTerminator): Int {
+            return endNode.shortestPathToStartNode(terminator) ?: throw Error("no route found")
         }
 
         override fun toString() = grid.joinToString("\n", "", "\n") { row ->
@@ -44,19 +45,21 @@ class Problem12 : DailyProblem<Int> {
             }
         }
 
-        fun trailblaze(nodes: Set<HillNode>, step: Int): Int? {
+        fun trailblaze(terminator: (node: HillNode) -> Boolean, nodes: Set<HillNode>, step: Int): Int? {
             return nodes.mapNotNull {
                 if (step < it.distanceFromEnd) {
                     it.distanceFromEnd = step
-                    it.shortestPathToStartNode(step + 1)
+                    it.shortestPathToStartNode(terminator, step + 1)
                 }
                 else null
             }.minOrNull()
         }
 
-        fun shortestPathToStartNode(step: Int = 0): Int? {
-            return if (isStartNode) step
-            else trailblaze(below, step) ?: trailblaze(equal, step) ?: trailblaze(above, step)
+        fun shortestPathToStartNode(terminator: (node: HillNode) -> Boolean, step: Int = 0): Int? {
+            return if (terminator(this)) step
+            else trailblaze(terminator, below, step)
+                ?: trailblaze(terminator, equal, step)
+                ?: trailblaze(terminator, above, step)
         }
 
     }
@@ -92,7 +95,9 @@ class Problem12 : DailyProblem<Int> {
     }
 
     override fun solvePart2(): Int {
-        return 0
+        val terminateAtElevationZero = { node: HillNode -> node.elevation == 0 }
+        val graph = buildHillGraph(data1)
+        return graph.findShortestPath(terminateAtElevationZero)
     }
 
     companion object {
