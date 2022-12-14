@@ -13,9 +13,9 @@ class Problem14 : DailyProblem<Int> {
 
     data class Path(val path: List<Pt>)
 
-    class Cave(val grid: Array<CharArray>, val yMax: Int, val xClip: Int) {
+    class Cave(val grid: Array<CharArray>, val height: Int, val xClip: Int) {
         val dripPoint = Pt(500, 0)
-        fun copy() = Cave(grid.copy(), yMax, xClip)
+        fun copy() = Cave(grid.copy(), height, xClip)
         fun printAt(pt: Pt, c: Char) = copy().also { it.setGridAt(pt, c); println(it) }
         fun gridAt(pt: Pt) = grid[pt.y][pt.x]
         fun setGridAt(pt: Pt, c: Char) {
@@ -24,27 +24,29 @@ class Problem14 : DailyProblem<Int> {
 
         fun dripSand(pt: Pt = dripPoint): Pt? { // return landing point, or null when exceeding vertical bound
 //            printAt(pt, 'x')
-            if ((pt.y + 1) > yMax) return null
+            if ((pt.y + 1) >= height) return null
             val openPoint = listOf(pt.below, pt.belowLeft, pt.belowRight).firstOrNull { gridAt(it) == '.' }
             return if (openPoint != null)
                 dripSand(openPoint)
             else {
-                pt.also { setGridAt(it, 'o') }
+                return if (gridAt(pt) == 'o') null else pt.also { setGridAt(it, 'o') }
             }
         }
 
         override fun toString() = grid.map { row -> row.joinToString("").substring(xClip) }.joinToString("\n", "", "\n")
 
         companion object {
-            fun fromPaths(paths: List<Path>): Cave {
+            fun fromPaths(paths: List<Path>, hasFloor: Boolean = false): Cave {
                 val xs = paths.flatMap { p -> p.path.map { it.x } }
                 val ys = paths.flatMap { p -> p.path.map { it.y } }
                 val xMin = xs.min()
                 val xMax = xs.max()
-//            val yMin = ys.min()
                 val yMax = ys.max()
                 val xClip = max(0, xMin - yMax)
-                val grid = Array(yMax + 1) { CharArray(xMax + 1) { '.' } }
+                val yFloor = yMax + 2
+                val height = 1 + if (hasFloor) yFloor else yMax
+                val width = 1 + if (hasFloor) xMax + yFloor else xMax
+                val grid = Array(height) { CharArray(width) { '.' } }
                 paths.forEach { p ->
                     p.path.zipWithNext().forEach { line ->
                         toIntRange(line.first.y, line.second.y).forEach { y ->
@@ -54,7 +56,10 @@ class Problem14 : DailyProblem<Int> {
                         }
                     }
                 }
-                return Cave(grid, yMax, xClip)
+                if (hasFloor) {
+                    (0 until width).forEach { x -> grid[yFloor][x] = '#' }
+                }
+                return Cave(grid, height, xClip)
             }
         }
     }
@@ -70,8 +75,15 @@ class Problem14 : DailyProblem<Int> {
         return generateSequence { cave.dripSand() }.count()
     }
 
+    fun solvePart0a(): Int {
+        val cave = Cave.fromPaths(toPaths(data0), true)
+//        return generateSequence { cave.dripSand().also { println(it); println(cave) } }.count()
+        return generateSequence { cave.dripSand() }.count()
+    }
+
     override fun solvePart2(): Int {
-        return 0
+        val cave = Cave.fromPaths(toPaths(data1), true)
+        return generateSequence { cave.dripSand() }.count()
     }
 
     fun toPaths(data: List<String>): List<Path> {
