@@ -123,4 +123,13 @@ class TestAll {
         }
     }
 
+    @Test
+    fun day12() {
+        Problem12().apply {
+            assertEquals(31, solvePart0())
+            assertEquals(0, solvePart1())
+            assertEquals(0, solvePart2())
+        }
+    }
+
 }
