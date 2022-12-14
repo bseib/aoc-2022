@@ -1,5 +1,3 @@
-import java.lang.Math.abs
-
 class Problem12 : DailyProblem<Int> {
 
     class HillGraph(
@@ -8,7 +6,7 @@ class Problem12 : DailyProblem<Int> {
         val grid: List<List<HillNode>>,
     ) {
         fun findShortestPath(): Int {
-            return startNode.shortestPathToEndNode() ?: throw Error("no route found")
+            return endNode.shortestPathToStartNode() ?: throw Error("no route found")
         }
 
         override fun toString() = grid.joinToString("\n", "", "\n") { row ->
@@ -16,45 +14,49 @@ class Problem12 : DailyProblem<Int> {
         }
     }
 
-    class HillNode(val letter: Char, val neighbors: MutableSet<HillNode> = mutableSetOf()) {
-        val elevation: Int
-        val isStartNode: Boolean
-        val isEndNode: Boolean
-
-        init {
-            when (letter) {
-                'S' -> {
-                    elevation = 0
-                    isStartNode = true
-                    isEndNode = false
-                }
-
-                'E' -> {
-                    elevation = 25
-                    isStartNode = false
-                    isEndNode = true
-                }
-
-                else -> {
-                    elevation = letter.minus('a')
-                    isStartNode = false
-                    isEndNode = false
-                }
-            }
+    class HillNode(val letter: Char) {
+        val isStartNode = 'S' == letter
+        val isEndNode = 'E' == letter
+        val elevation = when (letter) {
+            'S' -> 0
+            'E' -> 25
+            else -> letter.minus('a')
         }
+        val above: MutableSet<HillNode> = mutableSetOf() // neighbors above us, any distance
+        val below: MutableSet<HillNode> = mutableSetOf() // neighbors exactly -1 below us
+        val equal: MutableSet<HillNode> = mutableSetOf() // neighbors with same elevation
+        val every: MutableSet<HillNode> = mutableSetOf() // all neighbors, even those more than -1 below us
+        var distanceFromEnd: Int = Int.MAX_VALUE
 
         fun maybeAddNeighbor(potentialNeighbor: HillNode) {
-            if (abs(elevation - potentialNeighbor.elevation) <= 1) {
-                neighbors.add(potentialNeighbor)
-                potentialNeighbor.neighbors.add(this)
+            if (!every.contains(potentialNeighbor)) {
+                every.add(potentialNeighbor)
+                if (elevation < potentialNeighbor.elevation) {
+                    above.add(potentialNeighbor)
+                }
+                else if (1 == elevation - potentialNeighbor.elevation) {
+                    below.add(potentialNeighbor)
+                }
+                else if (elevation == potentialNeighbor.elevation) {
+                    equal.add(potentialNeighbor)
+                }
+                potentialNeighbor.maybeAddNeighbor(this)
             }
         }
 
-        fun shortestPathToEndNode(visited: Set<HillNode> = setOf(), step: Int = 0): Int? {
-            return if (isEndNode) step
-            else (neighbors subtract visited).mapNotNull {
-                it.shortestPathToEndNode(visited + this, step + 1)
+        fun trailblaze(nodes: Set<HillNode>, step: Int): Int? {
+            return nodes.mapNotNull {
+                if (step < it.distanceFromEnd) {
+                    it.distanceFromEnd = step
+                    it.shortestPathToStartNode(step + 1)
+                }
+                else null
             }.minOrNull()
+        }
+
+        fun shortestPathToStartNode(step: Int = 0): Int? {
+            return if (isStartNode) step
+            else trailblaze(below, step) ?: trailblaze(equal, step) ?: trailblaze(above, step)
         }
 
     }
@@ -85,7 +87,8 @@ class Problem12 : DailyProblem<Int> {
     }
 
     override fun solvePart1(): Int {
-        return 0
+        val graph = buildHillGraph(data1)
+        return graph.findShortestPath()
     }
 
     override fun solvePart2(): Int {
@@ -101,6 +104,49 @@ class Problem12 : DailyProblem<Int> {
             abdefghi
         """.toLines()
 
+        val data1 = """
+abcccaaaaaaccccccccaaaaaccccccaaaaaaccccccaaaaaaaacccaaaaaaaccaaaacccccccccccccccccccccccccaaaaaacccccccccccccccccccccccccccccaaaaaa
+abcccaaaaaacccccccaaaaaaccccaaaaaaaacccccccaaaaaaaaaaaaaaaaccaaaaacccccccccccccccccccccccccaaaaaacccccccccccccccccccccccccccccaaaaaa
+abccccaaaaacaaaccaaaaaaaacccaaaaaaaaacccccccaaaaaaaaaaaaaaaacaaaaaacccccccccaaacccccccccccaaaaaaaaccccccccccaaccccccccccccccccaaaaaa
+abccccaaaaccaaaaaaaaaaaaacccaaaaaaaaaacccccaaaaaaaaaaaaaaaaaaacaaaacccccccccaaaacccccccccaaaaaaaaaacccccccccaaaccccccccccccccccccaaa
+abcccccccccaaaaaacccaacccccccccaaacaaaccccccaacccccccaaaaaaaaacaacccccccccccaaaacccccccccaaaaaaaaaacccccccccaaaccacaaccccccccccccaaa
+abcccccccccaaaaaacccaacccccccccaaacccccccccccccccccccaaaacaaaacccccccaacaaccaaaccccccccccaccaaaaacacccccccccaaaacaaaaccccccccccccaac
+abccccccccccaaaaacccccccccccccccacccaaaacccccccccccccaaaacccccccccccccaaaacccccccccccaacccccaaaaccccccccjjjjaaaaaaaaaccccccccccccccc
+abccccccccccaaaacccccccccccccccccccaaaaacccccccccccccaaaccccccccccccccaaaaacccccccccaaaaaacccaaccccccccjjjjjjkkaaaacccccccccaacccccc
+abcccccaaccccccccccccccccccccccccccaaaaaacccccccccccccaacccccccccccccaaaaaaccccccccccaaaaaccccccccccccjjjjjjjkkkkaacccccaacaaacccccc
+abccaaaacccccccccccccccccccccccccccaaaaaaccccccccccccccccccccccccccccaaaacaccccccccaaaaaaaccccaacccccjjjjoooookkkkkkkklllaaaaaaacccc
+abccaaaaaacccccccccccccccccccccccccaaaaacccccccccccccccccccccccccccccccaaccccccccccaaaaaaaaccaaaaccccjjjoooooookkkkkkkllllaaaaaacccc
+abcccaaaaacccccccccccccccccccccccccccaaaccccccccaaaacccccccccccccccccccccccccccccccaaaaaaaaccaaaaccccjjooooooooppkkppplllllaccaacccc
+abccaaaaaccccccccccccaccccccccccccccccccccccccccaaaacccccccccccccccccccccccccccccccccaaacacccaaaacccijjooouuuuoppppppppplllccccccccc
+abcccccaacccccccccccaaaaaaaaccccccccccccccccccccaaaaccccaaccccccccaaacccccccccccccaacaaccccccccccccciijoouuuuuuppppppppplllcccaccccc
+abcccccccccccccccccccaaaaaaccccccccccccccccccccccaaccccaaaacccccccaaaaccccccccccaaaaaaccccccccccccciiiiootuuuuuupuuuvvpppllccccccccc
+abcccccccccccccccccccaaaaaaccaaaaacccccccccccccccccccccaaaacccccccaaaaccccccccccaaaaaaccccccccccccciiinnotuuxxxuuuuvvvpppllccccccccc
+abccccccccccccccacccaaaaaaaacaaaaaaacccccccccccccccccccaaaacccccccaaacccccaaaaccaaaaaccccaaccccccciiiinnnttxxxxuuyyyvvqqqllccccccccc
+abcccccccccccaaaaccaaaaaaaaaaaaaaaaaaccaacccccccccccccccccccccccccccccccccaaaacccaaaaaccaaacccccciiinnnnnttxxxxxyyyyvvqqqllccccccccc
+abaaaacccccccaaaaaaaaaaaaaaaaaaaaaaaaaaaacccccccccccccccccccccccccccccccccaaaacccaaaaaacaaaccccciiinnnnttttxxxxxyyyyvvqqmmmccccccccc
+abaaaaccccccccaaaaacccaaaaacaaaaaacaaaaaaccccccccccccccccaaccccccccccccccccaacccccccaaaaaaaaaaciiinnnnttttxxxxxyyyyvvqqqmmmccccccccc
+SbaaaacccccccaaaaaccccaaaaaccaaaaaaaaaaaccccccccccccccccaaacaacccccccccccccccccccccccaaaaaaaaachhhnnntttxxxEzzzzyyvvvqqqmmmccccccccc
+abaaaacccccccaacaacccccaaaaaaaacaaaaaaaaaccccccccccccccccaaaaaccccccccccccccccccccccccaaaaaaacchhhnnntttxxxxxyyyyyyvvvqqmmmdddcccccc
+abaaaacccccccccccccccccccaaaaaacaaaaaaaaaacccccccccccccaaaaaaccccccccaaaccccccccccccccaaaaaaccchhhnnntttxxxxywyyyyyyvvvqqmmmdddccccc
+abaacccccccccccccccccccaaaaaaacccccaaaaaaacccccccccccccaaaaaaaacccccaaaacccccccccccccaaaaaaacaahhhmmmttttxxwwyyyyyyyvvvqqmmmdddccccc
+abcccccccccccccccccccccaaaaaaacaaccaaacccccccccccccccccaacaaaaacccccaaaacccccccccccccaaacaaaaaahhhmmmmtsssswwyywwwwvvvvqqqmmdddccccc
+abcccccccccccccccaaaccccaaaaaaaaaacaaccaaccccccccccccccccaaacaccccccaaaacccccccccccccccccaaaaacahhhmmmmmsssswwywwwwwvvrrqqmmdddccccc
+abcccccccccccccaaaaaaccccaaaaaaaaaccaaaacccccccccccccccccaacccccccccccccccccccccccaaaccccaaaaaaahhhhhmmmmssswwwwwrrrrrrrrmmmmddccccc
+abcccccccccccccaaaaaaccccaaaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccaaaaaacccccaaaaachhhhhmmmmsswwwwrrrrrrrrrkkmdddccccc
+abccccccccccccccaaaaaccccccaaaaaaaaaaaaaaaccccccccccccccccccccccccccccccccccccccaaaaaaccccaaaaacccchhggmmmssswwrrrrrkkkkkkkkdddacccc
+abccaaaacccccccaaaaacccccccccaaaaaacaaaaacccccccccccccccccccccccccccccccccccccccaaaaaaccccaacaaaccccggggmmsssssrrlkkkkkkkkkdddaccccc
+abccaaaacccccccaaaaacccccccccaaaaaaccccaacccccccccccccccccccccccccccccccccccccccaaaaaccccccccaaccccccgggmllssssrllkkkkkkkeeeddaccccc
+abccaaaacccccccaaacccccccccccaaaaaacccccccccccccccccccaacccccccccccccccccccccccaaaaaacccccccccccccccccggllllssslllkkeeeeeeeeeaaacccc
+abcccaaccccccccaaacaaaccccccaaaaaaaaaaacccccccccccccaaaaaacccccccccccccccccccccaaacaaacccccaacccccccccggglllllllllfeeeeeeeeaaaaacccc
+abccccccccccaaaaaaaaaaccccccccccccaccaaaccacccccccccaaaaaaccccaaccaacccaaccccccaaaaaaacccccaaccccccccccggglllllllfffeeecccaaaaaacccc
+abccccccccccaaaaaaaaacccccccccccccccaaaaaaaccccccccccaaaaaccccaaaaaacccaaaaaaccaaaaaacccaaaaaaaacccccccggggllllfffffccccccaacccccccc
+abcccccccccccaaaaaaacccccccccccccccccaaaaaaccaacccccaaaaaccccccaaaaacccaaaaaacaaaaaaacccaaaaaaaaccccccccgggffffffffccccccccccccccccc
+abccccccccccccaaaaaaacccccccccccccaaaaaaaaacaaaaccccaaaaacaaaaaaaaaacaaaaaaacaaaaaaaaaccccaaaacccccccccccggffffffacccccccccccccccaaa
+abccccccccccccaaaaaaacaaccccccccccaaaaaaaaacaaaacccccaaaaaaaaaaaaaaaaaaaaaaacaaaaaaaaaacccaaaaacccccccccccaffffaaaaccccccccccccccaaa
+abccccccccccccaaacaaaaaacccccccccccaaaaaaaacaaaaaaaaaaaaaaaaaaaaaaaaacaaaaaaacccaaacaaaccaaaaaacccccccccccccccccaaaccccccccccccccaaa
+abccccccccccccaaccaaaaaccccccccccccccaaaaaaaccccaaaaaaaaaaaaccccaacccccaaaaaacccaaaccccccaaccaacccccccccccccccccaaacccccccccccaaaaaa
+abcccccccccccccccaaaaaaaaccccccccccccaacccacccccccaaaaaaaaaaccccaacccccaaccccccccaccccccccccccccccccccccccccccccccccccccccccccaaaaaa
+        """.toLines()
     }
 
 }
