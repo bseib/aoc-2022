@@ -49,17 +49,17 @@ class Problem2 : DailyProblem<Int> {
 
     fun solvePart0(): Int {
         return toWeaponPairList(data0, naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
-            .also { println("battle0 = $it") }
+//            .also { println("battle0 = $it") }
     }
 
     override fun solvePart1(): Int {
         return toWeaponPairList(data1, naiveWeaponPicker).map { it.second.battle(it.first) }.sum()
-            .also { println("battle1 = $it") }
+//            .also { println("battle1 = $it") }
     }
 
     override fun solvePart2(): Int {
         return toWeaponPairList(data1, realWeaponPicker).map { it.second.battle(it.first) }.sum()
-            .also { println("battle2 = $it") }
+//            .also { println("battle2 = $it") }
     }
 
     private fun toWeaponPairList(

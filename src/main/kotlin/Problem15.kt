@@ -1,6 +1,6 @@
 import kotlin.math.abs
 
-class Problem15 : DailyProblem<Int> {
+class Problem15 : DailyProblemPair<Int, Long> {
 
     class IntRangeSet(val ranges: Set<IntRange> = setOf()) {
         fun union(range: IntRange): IntRangeSet {
@@ -11,43 +11,61 @@ class Problem15 : DailyProblem<Int> {
             }
             return IntRangeSet(ranges)
         }
-        fun invert(range: IntRange): IntRangeSet {
-            val pts = listOf(range.first) + ranges.flatMap { r-> listOf(r.first - 1, r.last + 1) } + listOf(range.last)
+
+        fun invert(boundary: IntRange): IntRangeSet {
+            val pts = listOf(boundary.first) +
+                    ranges.sortedBy { it.first }.flatMap { r -> listOf(r.first - 1, r.last + 1) } +
+                    listOf(boundary.last)
             return IntRangeSet(pts.chunked(2).map { IntRange(it[0], it[1]) }.toSet())
         }
+
         fun size() = ranges.sumOf { it.size() }
     }
 
     data class Pt(val x: Int, val y: Int)
     data class SensorBeacon(val sensor: Pt, val beacon: Pt) {
-        val distance: Int by lazy { abs(sensor.x - beacon.x) + abs(sensor.y - beacon.y) }
-        fun crosssection(yIntercept: Int): IntRange? {
-            val delta = distance - abs(sensor.y - yIntercept)
-            return if (delta < 0) null else {
-                IntRange(sensor.x - delta, sensor.x + delta)
-            }
+        private val distance: Int by lazy { abs(sensor.x - beacon.x) + abs(sensor.y - beacon.y) }
+        fun sliceAtY(y: Int) = (distance - abs(sensor.y - y)).let { delta ->
+            if (delta < 0) null else IntRange(sensor.x - delta, sensor.x + delta)
         }
-        fun maxWidthRange() = IntRange(sensor.x - distance, sensor.x + distance)
     }
 
-    fun solveSlice(yIntercept: Int, sensors: List<SensorBeacon>): Int {
-        val composite = sensors.map { it.crosssection(yIntercept) }
-            .filterNotNull()
-            .fold(IntRangeSet()) { acc, intRange -> acc.union(intRange) }
-        val beaconCountAtSlice = sensors.map { it.beacon }.filter { it.y == yIntercept}.toSet().count()
-        return composite.size() - beaconCountAtSlice
+    fun notAllowedXPositions(sensors: List<SensorBeacon>, yIntercept: Int): IntRangeSet {
+        return sensors.mapNotNull { it.sliceAtY(yIntercept) }.fold(IntRangeSet()) { acc, intRange -> acc.union(intRange) }
+    }
+
+    fun allowedXPositions(boundaryRange: IntRange, sensors: List<SensorBeacon>, yIntercept: Int): IntRangeSet {
+        return notAllowedXPositions(sensors, yIntercept).invert(boundaryRange)
+    }
+
+    fun solveSlice(sensors: List<SensorBeacon>, yIntercept: Int): Int {
+        val beaconCountAtSlice = sensors.map { it.beacon }.filter { it.y == yIntercept }.toSet().count()
+        return notAllowedXPositions(sensors, yIntercept).size() - beaconCountAtSlice
+    }
+
+    fun solveSearch(sensors: List<SensorBeacon>, inRange: IntRange): Long {
+        inRange.forEach { y ->
+            allowedXPositions(inRange, sensors, y).ranges.firstOrNull { 1 == it.size() }?.let {
+                return it.first * 4000000L + y
+            }
+        }
+        throw Error("No beacon spot found")
     }
 
     fun solvePart0(): Int {
-        return solveSlice(10, parseToSensorBeacons(data0))
+        return solveSlice(parseToSensorBeacons(data0), 10)
     }
 
     override fun solvePart1(): Int {
-        return solveSlice(2000000, parseToSensorBeacons(data1))
+        return solveSlice(parseToSensorBeacons(data1), 2000000)
     }
 
-    override fun solvePart2(): Int {
-        return 0
+    fun solvePart0a(): Long {
+        return solveSearch(parseToSensorBeacons(data0), 0..20)
+    }
+
+    override fun solvePart2(): Long {
+        return solveSearch(parseToSensorBeacons(data1), 0..4000000)
     }
 
     fun parseToSensorBeacons(data: List<String>): List<SensorBeacon> {
@@ -103,7 +121,7 @@ Sensor at x=163617, y=1082438: closest beacon is at x=1163688, y=2000000
 Sensor at x=3728368, y=140105: closest beacon is at x=3732654, y=-724773
 Sensor at x=1187681, y=2105247: closest beacon is at x=1163688, y=2000000
 Sensor at x=2327144, y=3342616: closest beacon is at x=2445544, y=3467698
-        """.trimIndent().toLines()
+        """.toLines()
     }
 
 }
